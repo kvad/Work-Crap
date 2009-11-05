@@ -20,7 +20,12 @@ log_line_re = re.compile(r'''(?P<remote_host>\S+) #IP Address
 				\s* #whitespace
 				''', re.VERBOSE)
 
-def dictify_logline2(line):
+def check_args():
+	if len(sys.argv) != 2:
+		print "Error sys.argv[0]: <LogFile>"
+		sys.exit(1)
+
+def dictify_logline(line):
 	'''return a dictionary of the the pieces we want from t apachone log file'''
 	m = log_line_re.match(line)
 	if m:
@@ -34,23 +39,12 @@ def dictify_logline2(line):
 			'bytes_sent' : "0",
 		}
 
-def dictify_logline(line):
-	'''Return dict of pieces of apache log file. For now its just
-	remote ip, status code, bytes sent'''
-	
-	split_line = line.split()
-	return { 'remote_host' : split_line[0],
-		 'status' : split_line[8],
-		 'bytes_sent' : split_line[9],
-	}
-
-
 def generate_log_report(logfile):
 	'''Return dict of format remote_host => [list of bytes sent]
 	Function takes an apache file object '''
 	report_dict = {}
 	for line in logfile:
-		line_dict = dictify_logline2(line)
+		line_dict = dictify_logline(line)
 		print line_dict
 		try:
 			bytes_sent = int(line_dict['bytes_sent'])
@@ -59,11 +53,6 @@ def generate_log_report(logfile):
 			continue
 		report_dict.setdefault(line_dict['remote_host'], []).append(bytes_sent)
 	return report_dict
-
-def main():
-	txt = open('/var/log/httpd/access_log','r').readlines()[0]
-	data = dictify_logline(txt)
-	print data
 
 if __name__ == '__main__':
 	if not len(sys.argv) > 1:
